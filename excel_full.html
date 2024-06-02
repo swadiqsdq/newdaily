@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+  <style>
+    /* Additional CSS styles */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 8px;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    nav {
+      background-color: rgb(43, 42, 42) !important;
+      color: white !important; /* Ensure text is readable */
+    }
+    .custom-hero {
+      background-color: black !important;
+      color: yellow !important; /* Ensure text is readable */
+    }
+    .hero-body {
+      background-color: rgb(43, 42, 42) !important;
+      color: white !important; /* Ensure text is readable */
+    }
+    .navbar.custom-navbar {
+      background-color: black !important;
+    }
+    .navbar-item.custom-navbar-item {
+      color: burlywood !important;
+    }
+    .navbar-item.custom-navbar-item:hover {
+      background-color: gray !important; /* Gray color on hover */
+      color: white !important; /* Text color on hover */
+    }
+    .button.is-primary.custom-button {
+      background-color: green !important;
+      color: white !important;
+    }
+    .button.is-danger.custom-button {
+      background-color: red !important;
+      color: white !important;
+    }
+    .title {
+      color: burlywood !important;
+    }
+    .level-item img.company-logo {
+      max-height: 80px; /* Adjust based on your logo's height */
+    }
+    @media (max-width: 768px) {
+      .level-left {
+        flex-direction: column;
+        align-items: center;
+      }
+      .level-item {
+        margin-bottom: 10px;
+      }
+      .navbar-item.custom-navbar-item {
+        padding: 10px 20px;
+      }
+    }
+
+    /* Scroll icon */
+    .scroll-icon {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-size: 24px;
+      color: #333;
+    }
+
+    .scroll-icon a {
+      text-decoration: none;
+    }
+
+    .scroll-icon a:hover {
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+   <!-- Hero Section -->
+   <section class="hero is-primary is-bold custom-hero">
+    <div class="hero-body">
+      <div class="container">
+        <div class="level">
+          <div class="level-left">
+            <div class="level-item">
+              <img src="logo.png" alt="Company Logo" class="company-logo">
+            </div>
+            <div class="level-item">
+              <h1 class="title">Beshara Restaurant</h1>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Menu Section -->
+  <nav class="navbar is-primary custom-navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <a class="navbar-item custom-navbar-item" href="demo.html">Home</a>
+      <a class="navbar-item custom-navbar-item" href="excel_data.html">Today</a>
+      <a class="navbar-item custom-navbar-item" href="excel_full.html">FullExcel</a>
+    </div>
+  </nav>
+
+  <section class="section">
+    <div class="container">
+      <h1 class="title">Full Data</h1>
+      <div class="table-container">
+        <div id="excel-data" class="content">
+          <!-- Excel data will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Replace this URL with your published Google Sheets URL in CSV format
+    const googleSheetsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRwlEqCIXeup8tArrotXpr7gIG-RE3yNQGuItvUuIgQteDF6SOcrK4c7wkqX2oRG8saC2AYbTJ3Iom4/pub?output=csv';
+
+    // Fetch and display Excel data
+    fetch(googleSheetsUrl)
+      .then(response => response.text())
+      .then(data => {
+        // Parse the CSV data
+        const rows = data.split('\n');
+        const headers = rows[0].split(',');
+        let content = '<table class="table is-striped is-fullwidth"><thead><tr>';
+
+        // Display headers
+        headers.forEach(header => {
+          content += `<th>${header}</th>`;
+        });
+        content += '</tr></thead><tbody>';
+
+        let currentDate = ''; // Variable to store the current date
+        let totalAmount = 0; // Initialize total amount
+
+        // Display rows
+        for (let i = 1; i < rows.length; i++) {
+          const row = rows[i].split(',');
+          if (row[0] !== currentDate) {
+            // Display total amount for the previous date
+            if (currentDate !== '') {
+              content += `<tr><td colspan="${headers.length - 1}" style="text-align: left; font-weight: bold; color: red;">Total</td><td style="text-align: left; color: red;font-weight: bold;">${totalAmount.toFixed(2)}</td></tr>`;
+            }
+            // Update current date and reset total amount
+            currentDate = row[0];
+            totalAmount = 0;
+          }
+          content += '<tr>';
+          row.forEach((cell, index) => {
+            content += `<td>${cell}</td>`;
+            if (index === 2) { // Assuming the amount is in the third column (index 2)
+              totalAmount += parseFloat(cell) || 0; // Add the amount to totalAmount
+            }
+          });
+          content += '</tr>';
+        }
+
+        // Display total amount for the last date
+        if (currentDate !== '') {
+          content += `<tr><td colspan="${headers.length - 1}" style="text-align: left; font-weight: bold; color: red;">Total</td><td style="text-align: left; color: red;font-weight: bold;">${totalAmount.toFixed(2)}</td></tr>`;
+        }
+
+        content += '</tbody></table>';
+        // Add scroll icon
+        content += '<div class="scroll-icon">';
+        content += '<a href="#excel-data"><i class="fas fa-chevron-down"></i></a>';
+        content += '</div>';
+
+        // Display the table in the container
+        const excelDataContainer = document.getElementById('excel-data');
+        excelDataContainer.innerHTML = content;
+      })
+      .catch(error => {
+        console.error('Error fetching Excel data:', error);
+        document.getElementById('excel-data').innerHTML = '<p>Error loading data.</p>';
+      });
+  </script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beshara Restaurant</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+  <style>
+    .custom-hero {
+      background-color: black !important;
+      color: yellow !important; /* Ensure text is readable */
+    }
+    .hero-body {
+      background-color: rgb(43, 42, 42) !important;
+      color: white !important; /* Ensure text is readable */
+    }
+    .navbar.custom-navbar {
+      background-color: black !important;
+    }
+    .navbar-item.custom-navbar-item {
+      color: burlywood !important;
+    }
+    .navbar-item.custom-navbar-item:hover {
+      background-color: gray !important;
+      color: white !important; /* Ensure text is readable on hover */
+    }
+    .button.is-primary.custom-button {
+      background-color: green !important;
+      color: white !important;
+    }
+    .button.is-danger.custom-button {
+      background-color: red !important;
+      color: white !important;
+    }
+    .title {
+      color: burlywood !important;
+    }
+    .level-item img.company-logo {
+      max-height: 80px; /* Adjust based on your logo's height */
+    }
+    @media (max-width: 768px) {
+      .level-left {
+        flex-direction: column;
+        align-items: center;
+      }
+      .level-item {
+        margin-bottom: 10px;
+      }
+      .navbar-item.custom-navbar-item {
+        padding: 10px 20px;
+      }
+    } 
+  </style>
+</head>
+<body>
+  <!-- Hero Section -->
+  <section class="hero is-primary is-bold custom-hero">
+    <div class="hero-body">
+      <div class="container">
+        <div class="level">
+          <div class="level-left">
+            <div class="level-item">
+              <img src="logo.png" alt="Company Logo" class="company-logo">
+            </div>
+            <div class="level-item">
+              <h1 class="title">Beshara Restaurant</h1>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Menu Section -->
+  <nav class="navbar is-primary custom-navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <a class="navbar-item custom-navbar-item" href="demo.html">Home</a>
+      <a class="navbar-item custom-navbar-item" href="excel_data.html">Today</a>
+      <a class="navbar-item custom-navbar-item" href="excel_full.html">FullExcel</a>
+    </div>
+  </nav>
+
+  <!-- Form Section -->
+  <form id="form" class="container m-4 pl-4" method="POST">
+    <div class="field">
+      <label class="label">Date</label>
+      <div class="control has-icons-right">
+        <input class="input" type="date" placeholder="Date" name="Date" />
+        <span class="icon is-right">
+          <i class="fas fa-calendar"></i>
+        </span>
+      </div>
+    </div>
+    
+    <div class="field">
+      <label class="label">Item</label>
+      <div class="control">
+        <input class="input" type="text" placeholder="Item" name="Item" />
+      </div>
+    </div>
+    <div class="field">
+      <label class="label">Amount</label>
+      <div class="control">
+        <input class="input" type="number" step="0.01" placeholder="Amount" name="Amount" />
+      </div>
+    </div>
+    <div class="field is-grouped is-grouped-centered">
+      <div class="control">
+        <button class="button is-danger custom-button" type="button" id="cancel-button">Clear</button>
+      </div>
+      <div class="control">
+        <button class="button is-primary custom-button" type="submit" id="submit-button">Save</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Messages Section -->
+  <div id="message" style="display: none; margin: 20px; font-weight: bold; color: green; padding: 8px; background-color: beige; border-radius: 4px; border-color: aquamarine;"></div>
+  <div id="total-amount" style="margin: 20px; font-weight: bold;"></div>
+
+  <!-- Script Section -->
+  <script>
+    const totalsByDate = new Map();
+
+    document.getElementById("form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      document.getElementById("message").textContent = "Submitting...";
+      document.getElementById("message").style.display = "block";
+      document.getElementById("submit-button").disabled = true;
+
+      var formData = new FormData(this);
+      var keyValuePairs = [];
+      var amount = 0;
+      var date = '';
+      var item = '';
+
+      for (var pair of formData.entries()) {
+        keyValuePairs.push(pair[0] + "=" + pair[1]);
+        if (pair[0] === 'Amount') {
+          amount = parseFloat(pair[1]);
+        }
+        if (pair[0] === 'Date') {
+          date = pair[1];
+        }
+        if (pair[0] === 'Item') {
+          item = pair[1];
+        }
+      }
+
+      var formDataString = keyValuePairs.join("&");
+
+      fetch("https://script.google.com/macros/s/AKfycbzBBKnaFh9-DmNOxyhEEWmSZDl5jC3KXSOF5h67swGMQGlAngvZWly32bTKePpohsFx/exec", {
+        redirect: "follow",
+        method: "POST",
+        body: formDataString,
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+      })
+      .then(function (response) {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error("Failed to submit the form.");
+        }
+      })
+      .then(function (data) {
+        document.getElementById("message").textContent = "Data submitted successfully!";
+        document.getElementById("message").style.display = "block";
+        document.getElementById("message").style.backgroundColor = "green";
+        document.getElementById("message").style.color = "beige";
+        document.getElementById("submit-button").disabled = false;
+        document.getElementById("form").reset();
+
+        if (totalsByDate.has(date)) {
+          totalsByDate.set(date, totalsByDate.get(date) + amount);
+        } else {
+          totalsByDate.set(date, amount);
+        }
+
+        displayTotalAmount(date);
+
+        setTimeout(function () {
+          document.getElementById("message").textContent = "";
+          document.getElementById("message").style.display = "none";
+        }, 2600);
+      })
+      .catch(function (error) {
+        console.error(error);
+        document.getElementById("message").textContent = "An error occurred while submitting the form.";
+        document.getElementById("message").style.display = "block";
+      });
+    });
+
+    document.getElementById("cancel-button").addEventListener("click", function() {
+      document.getElementById("form").reset();
+      document.getElementById("message").style.display = "none"; // Hide the message
+    });
+
+    function displayTotalAmount(date) {
+      const totalAmount = totalsByDate.get(date) || 0;
+      document.getElementById("total-amount").textContent = `Total amount for ${date}: ${totalAmount.toFixed(2)}`;
+    }
+  </script>
+</body>
+</html>
