@@ -83,7 +83,6 @@
       display: flex;
       align-items: center;
       margin-bottom: 1rem;
-      position: relative; /* Added for icon positioning */
     }
     .search-input {
       flex: 1;
@@ -91,7 +90,6 @@
       border: 2px solid burlywood;
       border-radius: 5px 0 0 5px;
       font-family: inherit; /* Ensure placeholder font is consistent */
-      padding-right: 40px; /* Added right padding for icon */
     }
     .search-button {
       padding: 10px;
@@ -104,13 +102,6 @@
     .search-button:hover {
       background-color: #d2a679;
       border-color: #d2a679;
-    }
-    .search-icon {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #aaa;
     }
   </style>
 </head>
@@ -145,10 +136,7 @@
     <div class="container">
       <h1 class="title">Full Data</h1>
       <div class="search-container">
-        <input type="date" id="search-date" class="search-input" placeholder="Select a date">
-        <span class="icon search-icon">
-          <i class="fas fa-calendar-alt"></i>
-        </span>
+        <input type="date" id="search-date" class="search-input">
         <button class="search-button" onclick="filterDataByDate()">
           <span class="icon">
             <i class="fas fa-search"></i>
@@ -164,6 +152,9 @@
   </section>
 
   <script>
+    // Ensure placeholder text is shown in mobile browsers
+    document.getElementById('search-date').placeholder = 'Select a date';
+
     // Replace this URL with your published Google Sheets URL in CSV format
     const googleSheetsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRwlEqCIXeup8tArrotXpr7gIG-RE3yNQGuItvUuIgQteDF6SOcrK4c7wkqX2oRG8saC2AYbTJ3Iom4/pub?output=csv';
     let excelData = [];
