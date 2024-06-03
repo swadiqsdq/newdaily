@@ -4,7 +4,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-
   <style>
     /* Additional CSS styles */
     table {
@@ -21,15 +20,15 @@
     }
     nav {
       background-color: rgb(43, 42, 42) !important;
-      color: white !important; /* Ensure text is readable */
+      color: white !important;
     }
     .custom-hero {
       background-color: black !important;
-      color: yellow !important; /* Ensure text is readable */
+      color: yellow !important;
     }
     .hero-body {
       background-color: rgb(43, 42, 42) !important;
-      color: white !important; /* Ensure text is readable */
+      color: white !important;
     }
     .navbar.custom-navbar {
       background-color: black !important;
@@ -38,8 +37,8 @@
       color: burlywood !important;
     }
     .navbar-item.custom-navbar-item:hover {
-      background-color: gray !important; /* Gray color on hover */
-      color: white !important; /* Text color on hover */
+      background-color: gray !important;
+      color: white !important;
     }
     .button.is-primary.custom-button {
       background-color: green !important;
@@ -53,7 +52,7 @@
       color: burlywood !important;
     }
     .level-item img.company-logo {
-      max-height: 80px; /* Adjust based on your logo's height */
+      max-height: 80px;
     }
     @media (max-width: 768px) {
       .level-left {
@@ -67,8 +66,6 @@
         padding: 10px 20px;
       }
     }
-
-    /* Scroll icon */
     .scroll-icon {
       position: fixed;
       bottom: 20px;
@@ -76,19 +73,50 @@
       font-size: 24px;
       color: #333;
     }
-
     .scroll-icon a {
       text-decoration: none;
     }
-
     .scroll-icon a:hover {
       color: #555;
+    }
+    .search-container {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+      position: relative; /* Added for icon positioning */
+    }
+    .search-input {
+      flex: 1;
+      padding: 10px;
+      border: 2px solid burlywood;
+      border-radius: 5px 0 0 5px;
+      font-family: inherit; /* Ensure placeholder font is consistent */
+      padding-right: 40px; /* Added right padding for icon */
+    }
+    .search-button {
+      padding: 10px;
+      background-color: burlywood;
+      color: white;
+      border: 2px solid burlywood;
+      border-radius: 0 5px 5px 0;
+      cursor: pointer;
+    }
+    .search-button:hover {
+      background-color: #d2a679;
+      border-color: #d2a679;
+    }
+    .search-icon {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #aaa;
     }
   </style>
 </head>
 <body>
-   <!-- Hero Section -->
-   <section class="hero is-primary is-bold custom-hero">
+  <!-- Hero Section -->
+  <section class="hero is-primary is-bold custom-hero">
     <div class="hero-body">
       <div class="container">
         <div class="level">
@@ -113,9 +141,20 @@
     </div>
   </nav>
 
-  <section class="section"
+  <section class="section">
     <div class="container">
       <h1 class="title">Full Data</h1>
+      <div class="search-container">
+        <input type="date" id="search-date" class="search-input" placeholder="Select a date">
+        <span class="icon search-icon">
+          <i class="fas fa-calendar-alt"></i>
+        </span>
+        <button class="search-button" onclick="filterDataByDate()">
+          <span class="icon">
+            <i class="fas fa-search"></i>
+          </span>
+        </button>
+      </div>
       <div class="table-container">
         <div id="excel-data" class="content">
           <!-- Excel data will be loaded here -->
@@ -127,6 +166,7 @@
   <script>
     // Replace this URL with your published Google Sheets URL in CSV format
     const googleSheetsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRwlEqCIXeup8tArrotXpr7gIG-RE3yNQGuItvUuIgQteDF6SOcrK4c7wkqX2oRG8saC2AYbTJ3Iom4/pub?output=csv';
+    let excelData = [];
 
     // Fetch and display Excel data
     fetch(googleSheetsUrl)
@@ -135,58 +175,74 @@
         // Parse the CSV data
         const rows = data.split('\n');
         const headers = rows[0].split(',');
-        let content = '<table class="table is-striped is-fullwidth"><thead><tr>';
-
-        // Display headers
-        headers.forEach(header => {
-          content += `<th>${header}</th>`;
-        });
-        content += '</tr></thead><tbody>';
-
-        let currentDate = ''; // Variable to store the current date
-        let totalAmount = 0; // Initialize total amount
-
-        // Display rows
-        for (let i = 1; i < rows.length; i++) {
-          const row = rows[i].split(',');
-          if (row[0] !== currentDate) {
-            // Display total amount for the previous date
-            if (currentDate !== '') {
-              content += `<tr><td colspan="${headers.length - 1}" style="text-align: left; font-weight: bold; color: red;">Total</td><td style="text-align: left; color: red;font-weight: bold;">${totalAmount.toFixed(2)}</td></tr>`;
-            }
-            // Update current date and reset total amount
-            currentDate = row[0];
-            totalAmount = 0;
-          }
-          content += '<tr>';
-          row.forEach((cell, index) => {
-            content += `<td>${cell}</td>`;
-            if (index === 2) { // Assuming the amount is in the third column (index 2)
-              totalAmount += parseFloat(cell) || 0; // Add the amount to totalAmount
-            }
-          });
-          content += '</tr>';
-        }
-
-        // Display total amount for the last date
-        if (currentDate !== '') {
-          content += `<tr><td colspan="${headers.length - 1}" style="text-align: left; font-weight: bold; color: red;">Total</td><td style="text-align: left; color: red;font-weight: bold;">${totalAmount.toFixed(2)}</td></tr>`;
-        }
-
-        content += '</tbody></table>';
-        // Add scroll icon
-        content += '<div class="scroll-icon">';
-        content += '<a href="#excel-data"><i class="fas fa-chevron-down"></i></a>';
-        content += '</div>';
-
-        // Display the table in the container
-        const excelDataContainer = document.getElementById('excel-data');
-        excelDataContainer.innerHTML = content;
+        excelData = rows.map(row => row.split(','));
+        displayData(excelData);
       })
       .catch(error => {
         console.error('Error fetching Excel data:', error);
         document.getElementById('excel-data').innerHTML = '<p>Error loading data.</p>';
       });
+
+    function displayData(data) {
+      const headers = data[0];
+      let content = '<table class="table is-striped is-fullwidth"><thead><tr>';
+
+      // Display headers
+      headers.forEach(header => {
+        content += `<th>${header}</th>`;
+      });
+      content += '</tr></thead><tbody>';
+
+      let currentDate = ''; // Variable to store the current date
+      let totalAmount = 0; // Initialize total amount
+
+      // Display rows
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        if (row[0] !== currentDate) {
+          // Display total amount for the previous date
+          if (currentDate !== '') {
+            content += `<tr><td colspan="${headers.length - 1}" style="text-align: left; font-weight: bold; color: red;">Total</td><td style="text-align: left; color: red;font-weight: bold;">${totalAmount.toFixed(2)}</td></tr>`;
+          }
+          // Update current date and reset total amount
+          currentDate = row[0];
+          totalAmount = 0;
+        }
+        content += '<tr>';
+        row.forEach((cell, index) => {
+          content += `<td>${cell}</td>`;
+          if (index === 2) { // Assuming the amount is in the third column (index 2)
+            totalAmount += parseFloat(cell) || 0; // Add the amount to totalAmount
+          }
+        });
+        content += '</tr>';
+      }
+
+      // Display total amount for the last date
+      if (currentDate !== '') {
+        content += `<tr><td colspan="${headers.length - 1}" style="text-align: left; font-weight: bold; color: red;">Total</td><td style="text-align: left; color: red;font-weight: bold;">${totalAmount.toFixed(2)}</td></tr>`;
+      }
+
+      content += '</tbody></table>';
+      // Add scroll icon
+      content += '<div class="scroll-icon">';
+      content += '<a href="#excel-data"><i class="fas fa-chevron-down"></i></a>';
+      content += '</div>';
+
+      // Display the table in the container
+      const excelDataContainer = document.getElementById('excel-data');
+      excelDataContainer.innerHTML = content;
+    }
+
+    function filterDataByDate() {
+      const searchDate = document.getElementById('search-date').value;
+      if (searchDate) {
+        const filteredData = excelData.filter(row => row[0] === searchDate || row[0] === 'Date'); // Include header
+        displayData(filteredData);
+      } else {
+        displayData(excelData); // Display all data if no date is selected
+      }
+    }
   </script>
 </body>
 </html>
