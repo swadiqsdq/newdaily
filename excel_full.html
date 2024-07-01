@@ -133,16 +133,18 @@
     }
     .totals-container {
       display: flex;
-      justify-content: space-between;
+      justify-content: space-around;
+      flex-wrap: wrap; /* Allow items to wrap to the next line on smaller screens */
       margin-bottom: 1rem;
     }
     .total-box {
+      flex: 1; /* Allow boxes to grow and shrink based on available space */
       padding: 20px;
       border-radius: 8px;
       text-align: center;
-      width: 45%;
+      margin: 0.5rem;
       font-weight: bold;
-      font-size: 1.2rem;
+      font-size: 1rem;
     }
     .current-month {
       background-color: #48c774; /* Bulma primary color */
