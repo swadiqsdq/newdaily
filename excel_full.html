@@ -17,6 +17,7 @@
     }
     th {
       background-color: #f2f2f2;
+      cursor: pointer;
     }
     nav {
       background-color: rgb(43, 42, 42) !important;
@@ -91,7 +92,7 @@
       border-radius: 5px 0 0 5px;
       font-family: inherit; /* Ensure placeholder font is consistent */
     }
-    .search-button {
+    .search-button, .clear-button {
       padding: 10px;
       background-color: burlywood;
       color: white;
@@ -99,13 +100,57 @@
       border-radius: 0 5px 5px 0;
       cursor: pointer;
     }
-    .search-button:hover {
+    .clear-button {
+      border-radius: 5px;
+      margin-left: 10px;
+    }
+    .search-button:hover, .clear-button:hover {
       background-color: #d2a679;
       border-color: #d2a679;
     }
     .table-container {
       max-height: 400px; /* Set the desired height */
       overflow-y: auto; /* Enable vertical scrolling */
+    }
+    .loading-spinner {
+      display: none;
+      text-align: center;
+      font-size: 24px;
+      margin-top: 20px;
+    }
+    .pagination {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+    .pagination .page-item {
+      margin: 0 5px;
+      cursor: pointer;
+    }
+    .pagination .page-item.active {
+      font-weight: bold;
+      color: burlywood;
+    }
+    .totals-container {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .total-box {
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      width: 45%;
+      font-weight: bold;
+      font-size: 1.2rem;
+    }
+    .current-month {
+      background-color: #48c774; /* Bulma primary color */
+      color: white;
+    }
+    .previous-month {
+      background-color: #f14668; /* Bulma danger color */
+      color: white;
     }
   </style>
 </head>
@@ -139,6 +184,9 @@
   <section class="section">
     <div class="container">
       <h1 class="title">Full Data</h1>
+      <div id="totals-container" class="totals-container">
+        <!-- Total amount for the current and previous month will be shown here -->
+      </div>
       <div class="search-container">
         <input type="date" id="search-date" class="search-input">
         <button class="search-button" onclick="filterDataByDate()">
@@ -146,11 +194,18 @@
             <i class="fas fa-search"></i>
           </span>
         </button>
+        <button class="clear-button" onclick="clearDateFilter()">Clear</button>
       </div>
       <div class="table-container">
         <div id="excel-data" class="content">
           <!-- Excel data will be loaded here -->
         </div>
+      </div>
+      <div class="loading-spinner" id="loading-spinner">
+        <i class="fas fa-spinner fa-spin"></i> Loading...
+      </div>
+      <div class="pagination" id="pagination">
+        <!-- Pagination controls will be generated here -->
       </div>
     </div>
   </section>
@@ -159,84 +214,161 @@
     // Ensure placeholder text is shown in mobile browsers
     document.getElementById('search-date').placeholder = 'Select a date';
 
-    // Replace this URL with your published Google Sheets URL in CSV format
     const googleSheetsUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRwlEqCIXeup8tArrotXpr7gIG-RE3yNQGuItvUuIgQteDF6SOcrK4c7wkqX2oRG8saC2AYbTJ3Iom4/pub?output=csv';
     let excelData = [];
+    let currentPage = 1;
+    const daysPerPage = 10;
+    let sortOrder = 'asc';
 
-    // Fetch and display Excel data
     fetch(googleSheetsUrl)
       .then(response => response.text())
       .then(data => {
-        // Parse the CSV data
         const rows = data.split('\n');
         const headers = rows[0].split(',');
         excelData = rows.map(row => row.split(','));
         displayData(excelData);
+        displayTotals();
       })
       .catch(error => {
         console.error('Error fetching Excel data:', error);
         document.getElementById('excel-data').innerHTML = '<p>Error loading data.</p>';
       });
 
-    function displayData(data) {
-      const headers = data[0];
+    function displayData(data, page = 1) {
+      const uniqueDates = [...new Set(data.slice(1).map(row => row[0]))];
+      const startIndex = (page - 1) * daysPerPage;
+      const endIndex = startIndex + daysPerPage;
+      const paginatedDates = uniqueDates.slice(startIndex, endIndex);
+      const paginatedData = [data[0]].concat(data.filter(row => paginatedDates.includes(row[0])));
+
+      const headers = paginatedData[0];
       let content = '<table class="table is-striped is-fullwidth"><thead><tr>';
 
-      // Display headers
       headers.forEach(header => {
-        content += `<th>${header}</th>`;
+        content += `<th onclick="sortTable('${header}')">${header}</th>`;
       });
       content += '</tr></thead><tbody>';
 
-      let currentDate = ''; // Variable to store the current date
-      let totalAmount = 0; // Initialize total amount
+      let currentDate = '';
+      let totalAmount = 0;
 
-      // Display rows
-      for (let i = 1; i < data.length; i++) {
-        const row = data[i];
+      for (let i = 1; i < paginatedData.length; i++) {
+        const row = paginatedData[i];
         if (row[0] !== currentDate) {
-          // Display total amount for the previous date
           if (currentDate !== '') {
             content += `<tr><td colspan="${headers.length - 1}" style="text-align: left; font-weight: bold; color: red;">Total</td><td style="text-align: left; color: red;font-weight: bold;">${totalAmount.toFixed(2)}</td></tr>`;
           }
-          // Update current date and reset total amount
           currentDate = row[0];
           totalAmount = 0;
         }
+
         content += '<tr>';
-        row.forEach((cell, index) => {
-          content += `<td>${cell}</td>`;
-          if (index === 2) { // Assuming the amount is in the third column (index 2)
-            totalAmount += parseFloat(cell) || 0; // Add the amount to totalAmount
-          }
-        });
+        row.forEach(cell => content += `<td>${cell}</td>`);
         content += '</tr>';
+
+        totalAmount += parseFloat(row[2]) || 0;
       }
 
-      // Display total amount for the last date
       if (currentDate !== '') {
         content += `<tr><td colspan="${headers.length - 1}" style="text-align: left; font-weight: bold; color: red;">Total</td><td style="text-align: left; color: red;font-weight: bold;">${totalAmount.toFixed(2)}</td></tr>`;
       }
 
       content += '</tbody></table>';
-      // Add scroll icon
-      content += '<div class="scroll-icon">';
-      content += '<a href="#excel-data"><i class="fas fa-chevron-down"></i></a>';
-      content += '</div>';
+      content += '<div class="scroll-icon"><a href="#excel-data"><i class="fas fa-chevron-down"></i></a></div>';
 
-      // Display the table in the container
-      const excelDataContainer = document.getElementById('excel-data');
-      excelDataContainer.innerHTML = content;
+      document.getElementById('excel-data').innerHTML = content;
+      updatePagination(uniqueDates.length, page);
     }
 
     function filterDataByDate() {
       const searchDate = document.getElementById('search-date').value;
       if (searchDate) {
-        const filteredData = excelData.filter(row => row[0] === searchDate || row[0] === 'Date'); // Include header
+        const filteredData = excelData.filter(row => row[0] === searchDate || row[0] === 'Date');
         displayData(filteredData);
       } else {
-        displayData(excelData); // Display all data if no date is selected
+        displayData(excelData);
       }
+    }
+
+    function clearDateFilter() {
+      document.getElementById('search-date').value = '';
+      displayData(excelData);
+    }
+
+    function updatePagination(totalDays, currentPage) {
+      const totalPages = Math.ceil(totalDays / daysPerPage);
+      const paginationContainer = document.getElementById('pagination');
+      paginationContainer.innerHTML = '';
+
+      for (let page = 1; page <= totalPages; page++) {
+        const pageItem = document.createElement('span');
+        pageItem.classList.add('page-item');
+        if (page === currentPage) {
+          pageItem.classList.add('active');
+        }
+        pageItem.textContent = page;
+        pageItem.onclick = () => displayData(excelData, page);
+        paginationContainer.appendChild(pageItem);
+      }
+    }
+
+    function sortTable(columnName) {
+      const columnIndex = excelData[0].indexOf(columnName);
+      const groupedData = excelData.slice(1).reduce((acc, row) => {
+        const date = row[0];
+        if (!acc[date]) {
+          acc[date] = [];
+        }
+        acc[date].push(row);
+        return acc;
+      }, {});
+
+      const sortedGroupedData = Object.keys(groupedData).sort().reduce((acc, date) => {
+        const sortedRows = groupedData[date].sort((a, b) => {
+          if (sortOrder === 'asc') {
+            return a[columnIndex] < b[columnIndex] ? -1 : 1;
+          } else {
+            return a[columnIndex] > b[columnIndex] ? -1 : 1;
+          }
+        });
+        return acc.concat(sortedRows);
+      }, []);
+
+      sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+      displayData([excelData[0], ...sortedGroupedData]);
+    }
+
+    function displayTotals() {
+      const totalsContainer = document.getElementById('totals-container');
+      const currentMonth = new Date().getMonth() + 1;
+      const previousMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+      const currentYear = new Date().getFullYear();
+      const previousMonthYear = previousMonth === 12 ? currentYear - 1 : currentYear;
+
+      let currentMonthTotal = 0;
+      let previousMonthTotal = 0;
+
+      excelData.slice(1).forEach(row => {
+        const date = new Date(row[0]);
+        const month = date.getMonth() + 1;
+        const year = date.getFullYear();
+        const amount = parseFloat(row[2]) || 0;
+
+        if (month === currentMonth && year === currentYear) {
+          currentMonthTotal += amount;
+        } else if (month === previousMonth && year === previousMonthYear) {
+          previousMonthTotal += amount;
+        }
+      });
+
+      totalsContainer.innerHTML = `
+        <div class="total-box current-month">
+          Current Month: ${currentMonthTotal.toFixed(2)}&nbsp AED
+        </div>
+        <div class="total-box previous-month">
+          Previous Month: ${previousMonthTotal.toFixed(2)}&nbsp AED
+        </div>
+      `;
     }
   </script>
 </body>
