@@ -77,6 +77,17 @@
       margin: 5px;
       width: auto;
     }
+   /*  calender hover   */
+  .calendar-day:hover,
+  .calendar-day.today:hover {
+    background-color: rgb(130, 177, 238);
+    color: white;
+  }
+ /*  calender hover   */
+  .calendar-day:hover .total-amount,
+  .calendar-day.today:hover .total-amount {
+  color: red;
+  }
     @media (max-width: 1024px) {
       .calendar,
       .calendar-header {
